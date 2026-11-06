@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shadoh Hub</string>
+    <string name="tab_chat">Chat</string>
+    <string name="tab_hermes">Hermes</string>
+    <string name="tab_spark">Spark</string>
+    <string name="action_reload">Reload</string>
+    <string name="action_home">Go to site home</string>
+    <string name="action_desktop">Desktop site</string>
+    <string name="action_open_browser">Open in browser</string>
+    <string name="action_sign_out">Clear login cookies</string>
+    <string name="cookies_cleared">Cookies cleared — you\'ll be asked to sign in again</string>
+    <string name="load_error">Couldn\'t reach %1$s.\nCheck your connection or the Cloudflare tunnel.</string>
+    <string name="retry">Retry</string>
+</resources>

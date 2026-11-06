@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_reload"
+        android:icon="@drawable/ic_refresh"
+        android:title="@string/action_reload"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_home"
+        android:title="@string/action_home"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_desktop"
+        android:checkable="true"
+        android:title="@string/action_desktop"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_open_browser"
+        android:title="@string/action_open_browser"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_sign_out"
+        android:title="@string/action_sign_out"
+        app:showAsAction="never" />
+</menu>
