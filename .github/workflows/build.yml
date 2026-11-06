@@ -24,7 +24,18 @@ jobs:
         with:
           gradle-version: 8.9
 
+      - name: Restore signing key
+        if: ${{ env.SIGNING_KEYSTORE_B64 != '' }}
+        env:
+          SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+        run: echo "$SIGNING_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/sideload.jks"
+
       - name: Build debug APK
+        env:
+          SIGNING_KEYSTORE: ${{ runner.temp }}/sideload.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
         run: gradle :app:assembleDebug --no-daemon
 
       - name: Rename APK
