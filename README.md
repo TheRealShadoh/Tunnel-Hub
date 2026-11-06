@@ -43,6 +43,20 @@ gradle :app:assembleDebug      # needs Android SDK, JDK 17 and Gradle 8.9+ (run 
 ```
 APK lands at `app/build/outputs/apk/debug/app-debug.apk`.
 
+## Signing (so updates install over the old build)
+Each CI run would otherwise sign with a throwaway debug key and Android refuses the upgrade.
+Add these repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `SIGNING_KEYSTORE_B64` | base64 of the keystore file (`base64 -w0 shadoh-hub.jks`) |
+| `SIGNING_STORE_PASSWORD` | keystore password |
+| `SIGNING_KEY_PASSWORD` | key password |
+| `SIGNING_KEY_ALIAS` | key alias |
+
+Without them the build still succeeds with the default debug key, but you must uninstall before
+installing a newer build.
+
 ## Customising
 - Sites/tabs: edit `app/src/main/java/net/shadoh/hub/Site.kt` and `res/menu/bottom_nav.xml`.
 - Hosts allowed to stay in-app (vs. opening the external browser): `Sites.isInternalHost`.
