@@ -3,6 +3,14 @@
 Android wrapper app with three tabs — **Chat**, **Hermes**, **Spark** — each loading its
 `*.shadoh.net` site through your Cloudflare tunnel.
 
+## Install
+
+**[⬇ Download the latest APK](https://github.com/TheRealShadoh/agent-hub/releases/latest/download/ShadohHub.apk)**
+
+Open the file on your phone and allow installs from your browser if prompted. Every push to
+`main` publishes a new release, so re-download to update. All builds:
+[Releases](https://github.com/TheRealShadoh/agent-hub/releases).
+
 ## What it does
 
 - Bottom tabs for `chat.shadoh.net`, `hermes.shadoh.net`, `spark.shadoh.net`. Each tab keeps
@@ -22,10 +30,9 @@ Android wrapper app with three tabs — **Chat**, **Hermes**, **Spark** — each
 ## Build options
 
 ### A. GitHub Actions (no Android Studio needed)
-1. Push this folder to a GitHub repo.
-2. The **Build APK** workflow runs on push (or trigger it from the Actions tab).
-3. Download the `ShadohHub-debug` artifact, unzip, copy `app-debug.apk` to your phone,
-   and install it (allow "install unknown apps" for your file manager/browser).
+Push to `main` — the **Build APK** workflow builds the debug APK, uploads it as a workflow
+artifact, and publishes a GitHub Release tagged `build-<n>` with `ShadohHub.apk` attached.
+The **latest** link above always points at the newest release.
 
 ### B. Android Studio
 Open the folder, let Gradle sync, **Run** on your connected phone (or Build → Build APK).
