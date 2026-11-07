@@ -1,4 +1,4 @@
-package net.shadoh.hub
+package dev.tunnelhub.app
 
 import android.app.Activity
 import android.content.Context
@@ -51,7 +51,6 @@ class Updater(private val activity: Activity) {
     /** Fetch the latest release; callback on main thread with null if none/newer unavailable. */
     fun checkLatest(onResult: (Release?, String?) -> Unit) {
         val token = prefs.getString(KEY_TOKEN, null)
-        if (token.isNullOrBlank()) { onResult(null, "no-token"); return }
         io.execute {
             val result = runCatching {
                 val conn = open("https://api.github.com/repos/$REPO/releases/latest", token)
@@ -77,12 +76,12 @@ class Updater(private val activity: Activity) {
 
     /** Download the APK to the app cache and launch the package installer. */
     fun downloadAndInstall(rel: Release, onProgress: (Int) -> Unit, onError: (String) -> Unit) {
-        val token = prefs.getString(KEY_TOKEN, null) ?: return
+        val token = prefs.getString(KEY_TOKEN, null)
         io.execute {
             val result = runCatching {
                 val dir = File(activity.cacheDir, "updates").apply { mkdirs() }
                 dir.listFiles()?.forEach { it.delete() }
-                val out = File(dir, "ShadohHub-${rel.build}.apk")
+                val out = File(dir, "TunnelHub-${rel.build}.apk")
                 val conn = open("https://api.github.com/repos/$REPO/releases/assets/${rel.assetId}", token, octet = true)
                 val code = conn.responseCode
                 if (code != 200) error("Download failed: HTTP $code")
@@ -119,14 +118,14 @@ class Updater(private val activity: Activity) {
         activity.startActivity(intent)
     }
 
-    private fun open(url: String, token: String, octet: Boolean = false): HttpURLConnection {
+    private fun open(url: String, token: String?, octet: Boolean = false): HttpURLConnection {
         val conn = URL(url).openConnection() as HttpURLConnection
         conn.instanceFollowRedirects = true
         conn.connectTimeout = 15_000
         conn.readTimeout = 60_000
-        conn.setRequestProperty("Authorization", "Bearer $token")
+        if (!token.isNullOrBlank()) conn.setRequestProperty("Authorization", "Bearer $token")
         conn.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-        conn.setRequestProperty("User-Agent", "ShadohHub/${BuildConfig.VERSION_CODE}")
+        conn.setRequestProperty("User-Agent", "TunnelHub/${BuildConfig.VERSION_CODE}")
         conn.setRequestProperty("Accept", if (octet) "application/octet-stream" else "application/vnd.github+json")
         // GitHub redirects asset downloads to Azure storage; the token must NOT be forwarded there.
         if (octet) {
@@ -136,7 +135,7 @@ class Updater(private val activity: Activity) {
                 val loc = conn.getHeaderField("Location") ?: error("Redirect without Location")
                 val c2 = URL(loc).openConnection() as HttpURLConnection
                 c2.connectTimeout = 15_000; c2.readTimeout = 120_000
-                c2.setRequestProperty("User-Agent", "ShadohHub/${BuildConfig.VERSION_CODE}")
+                c2.setRequestProperty("User-Agent", "TunnelHub/${BuildConfig.VERSION_CODE}")
                 return c2
             }
         }
@@ -144,7 +143,8 @@ class Updater(private val activity: Activity) {
     }
 
     companion object {
-        const val REPO = "TheRealShadoh/agent-hub"
+        /** GitHub repo whose Releases carry the APK. Change if you fork. */
+        const val REPO = "TheRealShadoh/tunnel-hub"
         const val KEY_TOKEN = "github_token"
         const val KEY_LAST_CHECK = "update_last_check"
     }

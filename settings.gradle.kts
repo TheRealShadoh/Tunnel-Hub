@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ShadohHub"
+rootProject.name = "TunnelHub"
 include(":app")

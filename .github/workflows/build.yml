@@ -39,13 +39,13 @@ jobs:
         run: gradle :app:assembleDebug --no-daemon
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ShadohHub.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk TunnelHub.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ShadohHub-debug
-          path: ShadohHub.apk
+          name: TunnelHub-debug
+          path: TunnelHub.apk
           if-no-files-found: error
 
       - name: Publish release
@@ -53,8 +53,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Shadoh Hub build ${{ github.run_number }}
+          name: Tunnel Hub build ${{ github.run_number }}
           body: |
             Debug APK built from `${{ github.sha }}`.
-            Install: download **ShadohHub.apk** below and open it on your phone.
-          files: ShadohHub.apk
+            Install: download **TunnelHub.apk** below and open it on your phone.
+          files: TunnelHub.apk

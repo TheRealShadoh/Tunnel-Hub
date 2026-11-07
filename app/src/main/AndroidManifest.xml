@@ -13,7 +13,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ShadohHub"
+        android:theme="@style/Theme.TunnelHub"
         android:usesCleartextTraffic="false"
         android:hardwareAccelerated="true">
 
@@ -27,16 +27,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Let Android offer this app for shadoh.net links -->
-            <intent-filter android:autoVerify="false">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="chat.shadoh.net" />
-                <data android:scheme="https" android:host="hermes.shadoh.net" />
-                <data android:scheme="https" android:host="spark.shadoh.net" />
-            </intent-filter>
         </activity>
+
+        <activity
+            android:name=".SetupActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

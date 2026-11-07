@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "net.shadoh.hub"
+    namespace = "dev.tunnelhub.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "net.shadoh.hub"
+        applicationId = "dev.tunnelhub.app"
         minSdk = 26
         targetSdk = 35
         // CI run number == release tag build-<N>; the in-app updater compares against this.

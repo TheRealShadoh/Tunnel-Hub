@@ -1,4 +1,4 @@
-package net.shadoh.hub
+package dev.tunnelhub.app
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -54,8 +54,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
 
     private val webViews = HashMap<String, WebView>()
-    private var current: Site = Sites.all.first()
+    private var sites: List<Site> = emptyList()
+    private lateinit var current: Site
     private val updater by lazy { Updater(this) }
+
+    private val editTabs = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) recreate() // tabs changed: rebuild everything
+    }
+
+    private fun navIdFor(site: Site) = Menu.FIRST + sites.indexOf(site)
+    private fun siteForNavId(id: Int) = sites[id - Menu.FIRST]
 
     /** True while a Cloudflare Access login page is on screen (tabs hidden). */
     private var loginMode = false
@@ -72,7 +80,7 @@ class MainActivity : AppCompatActivity() {
     private fun setLoginMode(on: Boolean) {
         if (loginMode == on) return
         loginMode = on
-        bottomNav.visibility = if (on) View.GONE else View.VISIBLE
+        bottomNav.visibility = if (on || sites.size < 2) View.GONE else View.VISIBLE
         if (on) {
             container.visibility = View.VISIBLE
             toolbar.title = getString(R.string.sign_in_title)
@@ -105,6 +113,13 @@ class MainActivity : AppCompatActivity() {
         // Draw edge-to-edge and apply status-bar / nav-bar / keyboard insets ourselves.
         // Letting the system resize the window (adjustResize + fitsSystemWindows) makes the
         // WebView re-layout to a blank surface when the keyboard opens on newer Android.
+        sites = Sites.load(this)
+        if (sites.isEmpty()) {
+            startActivity(Intent(this, SetupActivity::class.java))
+            finish()
+            return
+        }
+        current = sites.first()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         val root = findViewById<View>(R.id.root)
@@ -125,13 +140,19 @@ class MainActivity : AppCompatActivity() {
         // Persist Cloudflare Access / app session cookies across launches.
         CookieManager.getInstance().setAcceptCookie(true)
 
+        bottomNav.menu.clear()
+        sites.forEachIndexed { i, site ->
+            bottomNav.menu.add(Menu.NONE, navIdFor(site), i, site.label)
+                .setIcon(Sites.icons[i % Sites.icons.size])
+        }
+        bottomNav.visibility = if (sites.size > 1) View.VISIBLE else View.GONE
         bottomNav.setOnItemSelectedListener { item ->
-            showSite(Sites.byNavId(item.itemId))
+            showSite(siteForNavId(item.itemId))
             true
         }
         bottomNav.setOnItemReselectedListener { item ->
             // Tapping the active tab again scrolls to top / goes home like most apps.
-            val wv = webViewFor(Sites.byNavId(item.itemId))
+            val wv = webViewFor(siteForNavId(item.itemId))
             if (wv.scrollY > 0) wv.scrollTo(0, 0) else wv.loadUrl(current.url)
         }
 
@@ -140,32 +161,32 @@ class MainActivity : AppCompatActivity() {
                 val wv = webViewFor(current)
                 when {
                     wv.canGoBack() -> wv.goBack()
-                    current != Sites.all.first() -> bottomNav.selectedItemId = Sites.all.first().navId
+                    current != sites.first() -> bottomNav.selectedItemId = navIdFor(sites.first())
                     else -> { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
                 }
             }
         })
 
-        // Deep link (e.g. tapped https://hermes.shadoh.net/... elsewhere) or last-used tab.
+        // Deep link (a configured host tapped elsewhere) or last-used tab.
         val startSite = siteForIntent(intent)
-            ?: Sites.all.firstOrNull { it.key == prefs.getString("lastTab", null) }
-            ?: Sites.all.first()
+            ?: sites.firstOrNull { it.key == prefs.getString("lastTab", null) }
+            ?: sites.first()
         container.visibility = View.INVISIBLE // revealed once the first page (or login) is ready
         maybeAutoCheckForUpdate()
-        bottomNav.selectedItemId = startSite.navId
-        intent?.dataString?.let { url -> if (Sites.isInternalHost(Uri.parse(url).host)) webViewFor(startSite).loadUrl(url) }
+        if (sites.size > 1) bottomNav.selectedItemId = navIdFor(startSite) else showSite(startSite)
+        intent?.dataString?.let { url -> if (Sites.isInternalHost(sites, Uri.parse(url).host)) webViewFor(startSite).loadUrl(url) }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val site = siteForIntent(intent) ?: return
-        bottomNav.selectedItemId = site.navId
+        if (sites.size > 1) bottomNav.selectedItemId = navIdFor(site) else showSite(site)
         intent.dataString?.let { webViewFor(site).loadUrl(it) }
     }
 
     private fun siteForIntent(intent: Intent?): Site? {
         val host = intent?.data?.host ?: return null
-        return Sites.all.firstOrNull { it.host.equals(host, ignoreCase = true) }
+        return sites.firstOrNull { it.host.equals(host, ignoreCase = true) }
     }
 
     // ---------------------------------------------------------------- tabs
@@ -222,7 +243,7 @@ class MainActivity : AppCompatActivity() {
                 val uri = request.url
                 val scheme = uri.scheme ?: return false
                 if (scheme == "http" || scheme == "https") {
-                    if (Sites.isInternalHost(uri.host)) return false // stay in-app
+                    if (Sites.isInternalHost(sites, uri.host)) return false // stay in-app
                     openExternal(uri); return true
                 }
                 // mailto:, tel:, intent:, etc.
@@ -279,7 +300,7 @@ class MainActivity : AppCompatActivity() {
                 val temp = WebView(view.context)
                 temp.webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean {
-                        if (Sites.isInternalHost(request.url.host)) view.loadUrl(request.url.toString())
+                        if (Sites.isInternalHost(sites, request.url.host)) view.loadUrl(request.url.toString())
                         else openExternal(request.url)
                         v.destroy()
                         return true
@@ -365,9 +386,10 @@ class MainActivity : AppCompatActivity() {
             R.id.action_open_browser -> openExternal(Uri.parse(wv.url ?: current.url))
             R.id.action_update -> checkForUpdate(manual = true)
             R.id.action_token -> updater.promptForToken { }
+            R.id.action_edit_tabs -> editTabs.launch(Intent(this, SetupActivity::class.java).putExtra(SetupActivity.EXTRA_EDIT, true))
             R.id.action_sign_out -> {
                 CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
-                webViews.values.forEach { it.clearCache(true); it.loadUrl(Sites.all.first { s -> webViews[s.key] === it }.url) }
+                webViews.values.forEach { it.clearCache(true); it.loadUrl(sites.first { s -> webViews[s.key] === it }.url) }
                 Toast.makeText(this, R.string.cookies_cleared, Toast.LENGTH_LONG).show()
             }
             else -> return super.onOptionsItemSelected(item)
@@ -378,22 +400,22 @@ class MainActivity : AppCompatActivity() {
     // -------------------------------------------------------------- updates
 
     private fun maybeAutoCheckForUpdate() {
-        if (!updater.hasToken) return
         val last = prefs.getLong(Updater.KEY_LAST_CHECK, 0L)
         if (System.currentTimeMillis() - last < 6 * 60 * 60 * 1000L) return
         checkForUpdate(manual = false)
     }
 
     private fun checkForUpdate(manual: Boolean) {
-        if (!updater.hasToken) {
-            if (manual) updater.promptForToken { ok -> if (ok) checkForUpdate(true) }
-            return
-        }
         if (manual) Snackbar.make(container, R.string.update_checking, Snackbar.LENGTH_SHORT).show()
         updater.checkLatest { rel, err ->
             prefs.edit().putLong(Updater.KEY_LAST_CHECK, System.currentTimeMillis()).apply()
             when {
-                err != null -> if (manual) Snackbar.make(container, getString(R.string.update_failed, err), Snackbar.LENGTH_LONG).show()
+                err != null -> if (manual) {
+                    val bar = Snackbar.make(container, getString(R.string.update_failed, err), Snackbar.LENGTH_LONG)
+                    // 404/401 on a private repo means we need a token.
+                    if (err.contains("404") || err.contains("401")) bar.setAction(R.string.action_token) { updater.promptForToken { ok -> if (ok) checkForUpdate(true) } }
+                    bar.show()
+                }
                 rel == null -> {}
                 rel.build <= BuildConfig.VERSION_CODE ->
                     if (manual) Snackbar.make(container, getString(R.string.update_none, BuildConfig.VERSION_CODE), Snackbar.LENGTH_SHORT).show()
@@ -419,7 +441,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        webViews.values.forEach { container.removeView(it); it.destroy() }
+        if (::container.isInitialized) webViews.values.forEach { container.removeView(it); it.destroy() }
         webViews.clear()
         super.onDestroy()
     }

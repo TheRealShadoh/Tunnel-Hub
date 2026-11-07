@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- DayNight so the chrome follows the phone's dark-mode setting -->
-    <style name="Theme.ShadohHub" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.TunnelHub" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

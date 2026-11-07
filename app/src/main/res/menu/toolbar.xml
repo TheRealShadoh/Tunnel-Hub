@@ -20,6 +20,10 @@
         android:title="@string/action_open_browser"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_edit_tabs"
+        android:title="@string/action_edit_tabs"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_update"
         android:title="@string/action_update"
         app:showAsAction="never" />
