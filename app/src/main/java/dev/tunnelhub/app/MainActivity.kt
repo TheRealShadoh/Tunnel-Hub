@@ -274,6 +274,7 @@ class MainActivity : AppCompatActivity() {
                 CookieManager.getInstance().flush()
                 // Pages without a mobile viewport render at 980px; give them one so they reflow.
                 if (!isDesktop(site)) view.evaluateJavascript(VIEWPORT_JS, null)
+                if (site.css.isNotBlank()) injectCss(view, site)
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -355,6 +356,15 @@ class MainActivity : AppCompatActivity() {
                 displayZoomControls = false
             }
         }
+    }
+
+    /** Adds the user's per-site CSS as a <style> (idempotent; survives SPA route changes). */
+    private fun injectCss(view: WebView, site: Site) {
+        val escaped = org.json.JSONObject.quote(site.css)
+        view.evaluateJavascript(
+            """(function(){var id='tunnelhub-css';var el=document.getElementById(id);
+            if(!el){el=document.createElement('style');el.id=id;document.documentElement.appendChild(el);}
+            el.textContent=$escaped;})();""", null)
     }
 
     private fun isDesktop(site: Site) = prefs.getBoolean("desktop_${site.key}", false)

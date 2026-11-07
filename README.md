@@ -29,7 +29,9 @@ them later from the overflow menu (**Edit tabs…**).
 - The `; wv` marker is stripped from the User-Agent so Google sign-in doesn't refuse the
   embedded browser. If it still does, use Access's One-time PIN method.
 - **Mobile fit**: pages with no viewport meta get one injected, zoom-to-fit and pinch-zoom are
-  on. A per-site **Desktop site** toggle is in the overflow menu for pages that need it.
+  on. A per-site **Desktop site** toggle is in the overflow menu for pages that need it, and each
+  tab has an optional **Custom CSS** box (setup screen → *Custom CSS*) for patching layouts that
+  were never built for phones — e.g. `.sidebar{display:none}`.
 - **In-app updates**: overflow → **Check for updates** (also checked quietly on launch, at most
   every 6 h). Downloads the APK from the latest GitHub Release and hands it to Android's
   installer. The release repo must be public (no token is stored in the app).

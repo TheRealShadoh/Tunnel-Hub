@@ -29,4 +29,6 @@
     <string name="setup_remove">Remove</string>
     <string name="setup_bad_url">Enter a valid URL</string>
     <string name="setup_need_one">Add at least one site</string>
+    <string name="setup_advanced">Custom CSS (optional)</string>
+    <string name="setup_hint_css">e.g. .sidebar { display:none }</string>
 </resources>

@@ -6,7 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** One tab in the app. Configured by the user on first launch (see SetupActivity). */
-data class Site(val key: String, val label: String, val url: String) {
+data class Site(val key: String, val label: String, val url: String, val css: String = "") {
     val host: String get() = Uri.parse(url).host ?: url
 }
 
@@ -23,7 +23,7 @@ object Sites {
             val arr = JSONArray(raw)
             (0 until arr.length()).map { i ->
                 val o = arr.getJSONObject(i)
-                Site(o.getString("key"), o.getString("label"), o.getString("url"))
+                Site(o.getString("key"), o.getString("label"), o.getString("url"), o.optString("css", ""))
             }
         }.getOrDefault(emptyList())
     }
@@ -31,7 +31,7 @@ object Sites {
     fun save(ctx: Context, sites: List<Site>) {
         val arr = JSONArray()
         sites.forEach { s ->
-            arr.put(JSONObject().put("key", s.key).put("label", s.label).put("url", s.url))
+            arr.put(JSONObject().put("key", s.key).put("label", s.label).put("url", s.url).put("css", s.css))
         }
         ctx.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit().putString(KEY, arr.toString()).apply()
     }

@@ -51,13 +51,20 @@ class SetupActivity : AppCompatActivity() {
         val existing = Sites.load(this)
         if (existing.isEmpty()) {
             addRow("Chat", ""); addRow("", "")
-        } else existing.forEach { addRow(it.label, it.url) }
+        } else existing.forEach { addRow(it.label, it.url, it.css) }
     }
 
-    private fun addRow(label: String = "", url: String = "") {
+    private fun addRow(label: String = "", url: String = "", css: String = "") {
         val row = LayoutInflater.from(this).inflate(R.layout.row_site, rows, false)
         row.findViewById<EditText>(R.id.siteName).setText(label)
         row.findViewById<EditText>(R.id.siteUrl).setText(url)
+        val cssField = row.findViewById<EditText>(R.id.siteCss)
+        val cssWrap = row.findViewById<View>(R.id.cssWrap)
+        cssField.setText(css)
+        cssWrap.visibility = if (css.isNotBlank()) View.VISIBLE else View.GONE
+        row.findViewById<View>(R.id.advanced).setOnClickListener {
+            cssWrap.visibility = if (cssWrap.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }
         row.findViewById<ImageButton>(R.id.remove).setOnClickListener { rows.removeView(row) }
         rows.addView(row)
     }
@@ -75,7 +82,8 @@ class SetupActivity : AppCompatActivity() {
                 urlField.error = getString(R.string.setup_bad_url); urlField.requestFocus(); return
             }
             val label = name.ifEmpty { Site("", "", url).host.substringBefore('.').replaceFirstChar { it.uppercase() } }
-            sites += Site("site$i", label, url)
+            val css = row.findViewById<EditText>(R.id.siteCss).text.toString().trim()
+            sites += Site("site$i", label, url, css)
         }
         if (sites.isEmpty()) {
             Snackbar.make(rows, R.string.setup_need_one, Snackbar.LENGTH_SHORT).show(); return
