@@ -35,6 +35,16 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 
+private const val VIEWPORT_JS = """
+(function(){
+  if (document.querySelector('meta[name=viewport]')) return;
+  var m = document.createElement('meta');
+  m.name = 'viewport';
+  m.content = 'width=device-width, initial-scale=1, maximum-scale=5';
+  document.head.appendChild(m);
+})();
+"""
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var toolbar: MaterialToolbar
@@ -45,6 +55,32 @@ class MainActivity : AppCompatActivity() {
 
     private val webViews = HashMap<String, WebView>()
     private var current: Site = Sites.all.first()
+
+    /** True while a Cloudflare Access login page is on screen (tabs hidden). */
+    private var loginMode = false
+    private var firstLoad = true
+
+    private fun isLoginUrl(url: String?): Boolean {
+        val host = url?.let { Uri.parse(it).host?.lowercase() } ?: return false
+        return host.endsWith("cloudflareaccess.com") ||
+            url.contains("/cdn-cgi/access/") ||
+            Sites.isIdentityProviderHost(host)
+    }
+
+    private fun setLoginMode(on: Boolean) {
+        if (loginMode == on) return
+        loginMode = on
+        bottomNav.visibility = if (on) View.GONE else View.VISIBLE
+        if (on) {
+            container.visibility = View.VISIBLE
+            toolbar.title = getString(R.string.sign_in_title)
+            toolbar.subtitle = getString(R.string.sign_in_subtitle)
+        } else {
+            toolbar.title = current.label
+            toolbar.subtitle = current.host
+        }
+        invalidateOptionsMenu()
+    }
 
     // --- file upload (<input type="file">) plumbing ---
     private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
@@ -112,6 +148,7 @@ class MainActivity : AppCompatActivity() {
         val startSite = siteForIntent(intent)
             ?: Sites.all.firstOrNull { it.key == prefs.getString("lastTab", null) }
             ?: Sites.all.first()
+        container.visibility = View.INVISIBLE // revealed once the first page (or login) is ready
         bottomNav.selectedItemId = startSite.navId
         intent?.dataString?.let { url -> if (Sites.isInternalHost(Uri.parse(url).host)) webViewFor(startSite).loadUrl(url) }
     }
@@ -191,12 +228,21 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
-                if (view === webViewFor(current)) { progress.visibility = View.VISIBLE; progress.progress = 0 }
+                if (view === webViewFor(current)) {
+                    progress.visibility = View.VISIBLE; progress.progress = 0
+                    setLoginMode(isLoginUrl(url))
+                }
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
-                if (view === webViewFor(current)) progress.visibility = View.GONE
+                if (view === webViewFor(current)) {
+                    progress.visibility = View.GONE
+                    setLoginMode(isLoginUrl(url))
+                    if (firstLoad && !loginMode) { firstLoad = false; container.visibility = View.VISIBLE }
+                }
                 CookieManager.getInstance().flush()
+                // Pages without a mobile viewport render at 980px; give them one so they reflow.
+                if (!isDesktop(site)) view.evaluateJavascript(VIEWPORT_JS, null)
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -273,8 +319,9 @@ class MainActivity : AppCompatActivity() {
             } else {
                 userAgentString = base
                 useWideViewPort = true
-                loadWithOverviewMode = false
-                builtInZoomControls = false
+                loadWithOverviewMode = true
+                builtInZoomControls = true
+                displayZoomControls = false
             }
         }
     }
@@ -295,6 +342,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menu.findItem(R.id.action_desktop).isChecked = isDesktop(current)
+        menu.findItem(R.id.action_desktop).isVisible = !loginMode
+        menu.findItem(R.id.action_home).isVisible = !loginMode
         return super.onPrepareOptionsMenu(menu)
     }
 
