@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 
     private val webViews = HashMap<String, WebView>()
     private var current: Site = Sites.all.first()
+    private val updater by lazy { Updater(this) }
 
     /** True while a Cloudflare Access login page is on screen (tabs hidden). */
     private var loginMode = false
@@ -150,6 +151,7 @@ class MainActivity : AppCompatActivity() {
             ?: Sites.all.firstOrNull { it.key == prefs.getString("lastTab", null) }
             ?: Sites.all.first()
         container.visibility = View.INVISIBLE // revealed once the first page (or login) is ready
+        maybeAutoCheckForUpdate()
         bottomNav.selectedItemId = startSite.navId
         intent?.dataString?.let { url -> if (Sites.isInternalHost(Uri.parse(url).host)) webViewFor(startSite).loadUrl(url) }
     }
@@ -361,6 +363,8 @@ class MainActivity : AppCompatActivity() {
                 wv.reload()
             }
             R.id.action_open_browser -> openExternal(Uri.parse(wv.url ?: current.url))
+            R.id.action_update -> checkForUpdate(manual = true)
+            R.id.action_token -> updater.promptForToken { }
             R.id.action_sign_out -> {
                 CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
                 webViews.values.forEach { it.clearCache(true); it.loadUrl(Sites.all.first { s -> webViews[s.key] === it }.url) }
@@ -369,6 +373,42 @@ class MainActivity : AppCompatActivity() {
             else -> return super.onOptionsItemSelected(item)
         }
         return true
+    }
+
+    // -------------------------------------------------------------- updates
+
+    private fun maybeAutoCheckForUpdate() {
+        if (!updater.hasToken) return
+        val last = prefs.getLong(Updater.KEY_LAST_CHECK, 0L)
+        if (System.currentTimeMillis() - last < 6 * 60 * 60 * 1000L) return
+        checkForUpdate(manual = false)
+    }
+
+    private fun checkForUpdate(manual: Boolean) {
+        if (!updater.hasToken) {
+            if (manual) updater.promptForToken { ok -> if (ok) checkForUpdate(true) }
+            return
+        }
+        if (manual) Snackbar.make(container, R.string.update_checking, Snackbar.LENGTH_SHORT).show()
+        updater.checkLatest { rel, err ->
+            prefs.edit().putLong(Updater.KEY_LAST_CHECK, System.currentTimeMillis()).apply()
+            when {
+                err != null -> if (manual) Snackbar.make(container, getString(R.string.update_failed, err), Snackbar.LENGTH_LONG).show()
+                rel == null -> {}
+                rel.build <= BuildConfig.VERSION_CODE ->
+                    if (manual) Snackbar.make(container, getString(R.string.update_none, BuildConfig.VERSION_CODE), Snackbar.LENGTH_SHORT).show()
+                else -> Snackbar.make(container, getString(R.string.update_available, rel.build, BuildConfig.VERSION_CODE), Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.update_install) { startUpdate(rel) }
+                    .show()
+            }
+        }
+    }
+
+    private fun startUpdate(rel: Updater.Release) {
+        val bar = Snackbar.make(container, getString(R.string.update_downloading, 0), Snackbar.LENGTH_INDEFINITE).also { it.show() }
+        updater.downloadAndInstall(rel,
+            onProgress = { pct -> bar.setText(getString(R.string.update_downloading, pct)) },
+            onError = { msg -> bar.dismiss(); Snackbar.make(container, getString(R.string.update_failed, msg), Snackbar.LENGTH_LONG).show() })
     }
 
     // ------------------------------------------------------------ lifecycle
