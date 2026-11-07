@@ -12,4 +12,6 @@
     <string name="cookies_cleared">Cookies cleared — you\'ll be asked to sign in again</string>
     <string name="load_error">Couldn\'t reach %1$s.\nCheck your connection or the Cloudflare tunnel.</string>
     <string name="retry">Retry</string>
+    <string name="sign_in_title">Sign in</string>
+    <string name="sign_in_subtitle">Cloudflare Access</string>
 </resources>

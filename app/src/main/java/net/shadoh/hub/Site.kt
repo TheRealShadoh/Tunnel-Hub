@@ -32,8 +32,12 @@ object Sites {
         return h.endsWith("shadoh.net") ||
             h.endsWith("cloudflareaccess.com") ||
             h.endsWith("cloudflare.com") ||
-            // common Access identity providers — keep them in-app so the redirect lands back here
-            h.endsWith("accounts.google.com") ||
+            isIdentityProviderHost(h)
+    }
+
+    /** Identity providers Cloudflare Access may hand off to; shown in the full-screen login view. */
+    fun isIdentityProviderHost(h: String): Boolean {
+        return h.endsWith("accounts.google.com") ||
             h.endsWith("google.com") ||
             h.endsWith("gstatic.com") ||
             h.endsWith("github.com") ||
