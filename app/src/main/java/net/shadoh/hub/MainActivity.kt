@@ -61,7 +61,8 @@ class MainActivity : AppCompatActivity() {
     private var firstLoad = true
 
     private fun isLoginUrl(url: String?): Boolean {
-        val host = url?.let { Uri.parse(it).host?.lowercase() } ?: return false
+        if (url == null) return false
+        val host = Uri.parse(url).host?.lowercase() ?: return false
         return host.endsWith("cloudflareaccess.com") ||
             url.contains("/cdn-cgi/access/") ||
             Sites.isIdentityProviderHost(host)
