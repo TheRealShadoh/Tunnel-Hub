@@ -11,8 +11,10 @@ android {
         applicationId = "net.shadoh.hub"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3"
+        // CI run number == release tag build-<N>; the in-app updater compares against this.
+        val ciBuild = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = ciBuild
+        versionName = "1.$ciBuild"
     }
 
     // Stable sideload signing key (from CI secrets) so each build installs over the last.
@@ -36,6 +38,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             sideloadKeystore?.let { signingConfig = signingConfigs.getByName("sideload") }
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {

@@ -11,6 +11,14 @@ Open the file on your phone and allow installs from your browser if prompted. Ev
 `main` publishes a new release, so re-download to update. All builds:
 [Releases](https://github.com/TheRealShadoh/agent-hub/releases).
 
+## Updating from inside the app
+Overflow menu → **Check for updates**. The first time it asks for a GitHub token because the
+repo is private: create a *fine-grained* personal access token (GitHub → Settings → Developer
+settings → Personal access tokens → Fine-grained) scoped to **TheRealShadoh/agent-hub** with
+**Contents: Read-only**. The app also checks quietly on launch (at most every 6 h) and shows an
+**Update** banner when a newer build exists. The APK is downloaded and handed to Android's
+installer; you may need to allow "install unknown apps" for Shadoh Hub once.
+
 ## What it does
 
 - Bottom tabs for `chat.shadoh.net`, `hermes.shadoh.net`, `spark.shadoh.net`. Each tab keeps

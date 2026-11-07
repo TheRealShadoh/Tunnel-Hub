@@ -14,4 +14,14 @@
     <string name="retry">Retry</string>
     <string name="sign_in_title">Sign in</string>
     <string name="sign_in_subtitle">Cloudflare Access</string>
+    <string name="action_update">Check for updates</string>
+    <string name="action_token">GitHub token…</string>
+    <string name="token_title">GitHub token</string>
+    <string name="token_message">The releases live in a private repo. Create a fine-grained personal access token with read-only Contents permission on TheRealShadoh/agent-hub and paste it here. It\'s stored only on this phone.</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_none">You\'re on the latest build (%1$d)</string>
+    <string name="update_available">Build %1$d is available (you have %2$d)</string>
+    <string name="update_install">Update</string>
+    <string name="update_downloading">Downloading update… %1$d%%</string>
+    <string name="update_failed">Update failed: %1$s</string>
 </resources>
