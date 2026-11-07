@@ -12,10 +12,7 @@
     <string name="sign_in_title">Sign in</string>
     <string name="sign_in_subtitle">Cloudflare Access</string>
     <string name="action_update">Check for updates</string>
-    <string name="action_token">GitHub token (private repo)…</string>
     <string name="action_edit_tabs">Edit tabs…</string>
-    <string name="token_title">GitHub token</string>
-    <string name="token_message">Only needed if the release repo is private. Create a fine-grained personal access token with read-only Contents permission on the repo and paste it here. It\'s stored only on this phone.</string>
     <string name="update_checking">Checking for updates…</string>
     <string name="update_none">You\'re on the latest build (%1$d)</string>
     <string name="update_available">Build %1$d is available (you have %2$d)</string>

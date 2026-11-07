@@ -32,8 +32,7 @@ them later from the overflow menu (**Edit tabs…**).
   on. A per-site **Desktop site** toggle is in the overflow menu for pages that need it.
 - **In-app updates**: overflow → **Check for updates** (also checked quietly on launch, at most
   every 6 h). Downloads the APK from the latest GitHub Release and hands it to Android's
-  installer. If your fork's repo is private, add a fine-grained token (Contents: read-only)
-  via **GitHub token…**.
+  installer. The release repo must be public (no token is stored in the app).
 - File uploads, microphone permission (voice input), dark-mode follow, external links open in
   your browser, back button walks history then returns to the first tab.
 - **Clear login cookies** in the overflow menu forces a fresh Access login.
@@ -73,7 +72,6 @@ the app checks. Change it to `you/your-fork`.
 ## Privacy / security notes
 - Nothing leaves the phone except requests to the sites you configure and to `api.github.com`
   for update checks. There is no analytics or telemetry.
-- The GitHub token (if you set one) is stored in app-private SharedPreferences.
 - Only `https://` is used; cleartext traffic is disabled. Mixed content is blocked.
 - Downloaded update APKs are served to the installer through a `FileProvider` over the app's
   private cache and deleted on the next update.

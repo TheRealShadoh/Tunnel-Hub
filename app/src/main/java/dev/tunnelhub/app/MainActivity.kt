@@ -150,10 +150,12 @@ class MainActivity : AppCompatActivity() {
             showSite(siteForNavId(item.itemId))
             true
         }
+        // Guard against double-showing the same site (e.g. the explicit showSite in onCreate).
         bottomNav.setOnItemReselectedListener { item ->
-            // Tapping the active tab again scrolls to top / goes home like most apps.
-            val wv = webViewFor(siteForNavId(item.itemId))
-            if (wv.scrollY > 0) wv.scrollTo(0, 0) else wv.loadUrl(current.url)
+            val site = siteForNavId(item.itemId)
+            if (site != current || container.childCount == 0) { showSite(site); return@setOnItemReselectedListener }
+            val wv = webViewFor(site)
+            if (wv.scrollY > 0) wv.scrollTo(0, 0) else wv.loadUrl(site.url)
         }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -173,14 +175,18 @@ class MainActivity : AppCompatActivity() {
             ?: sites.first()
         container.visibility = View.INVISIBLE // revealed once the first page (or login) is ready
         maybeAutoCheckForUpdate()
-        if (sites.size > 1) bottomNav.selectedItemId = navIdFor(startSite) else showSite(startSite)
+        // BottomNavigationView auto-selects its first item, so selectedItemId alone won't fire
+        // the listener for that tab; always show explicitly.
+        showSite(startSite)
+        if (sites.size > 1) bottomNav.selectedItemId = navIdFor(startSite)
         intent?.dataString?.let { url -> if (Sites.isInternalHost(sites, Uri.parse(url).host)) webViewFor(startSite).loadUrl(url) }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val site = siteForIntent(intent) ?: return
-        if (sites.size > 1) bottomNav.selectedItemId = navIdFor(site) else showSite(site)
+        showSite(site)
+        if (sites.size > 1) bottomNav.selectedItemId = navIdFor(site)
         intent.dataString?.let { webViewFor(site).loadUrl(it) }
     }
 
@@ -193,6 +199,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSite(site: Site) {
         current = site
+        if (loginMode) container.visibility = View.VISIBLE
         prefs.edit().putString("lastTab", site.key).apply()
         toolbar.title = site.label
         toolbar.subtitle = site.host
@@ -385,7 +392,6 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.action_open_browser -> openExternal(Uri.parse(wv.url ?: current.url))
             R.id.action_update -> checkForUpdate(manual = true)
-            R.id.action_token -> updater.promptForToken { }
             R.id.action_edit_tabs -> editTabs.launch(Intent(this, SetupActivity::class.java).putExtra(SetupActivity.EXTRA_EDIT, true))
             R.id.action_sign_out -> {
                 CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
@@ -410,12 +416,7 @@ class MainActivity : AppCompatActivity() {
         updater.checkLatest { rel, err ->
             prefs.edit().putLong(Updater.KEY_LAST_CHECK, System.currentTimeMillis()).apply()
             when {
-                err != null -> if (manual) {
-                    val bar = Snackbar.make(container, getString(R.string.update_failed, err), Snackbar.LENGTH_LONG)
-                    // 404/401 on a private repo means we need a token.
-                    if (err.contains("404") || err.contains("401")) bar.setAction(R.string.action_token) { updater.promptForToken { ok -> if (ok) checkForUpdate(true) } }
-                    bar.show()
-                }
+                err != null -> if (manual) Snackbar.make(container, getString(R.string.update_failed, err), Snackbar.LENGTH_LONG).show()
                 rel == null -> {}
                 rel.build <= BuildConfig.VERSION_CODE ->
                     if (manual) Snackbar.make(container, getString(R.string.update_none, BuildConfig.VERSION_CODE), Snackbar.LENGTH_SHORT).show()

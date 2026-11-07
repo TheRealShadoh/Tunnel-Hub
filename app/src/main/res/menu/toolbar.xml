@@ -28,10 +28,6 @@
         android:title="@string/action_update"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_token"
-        android:title="@string/action_token"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/action_sign_out"
         android:title="@string/action_sign_out"
         app:showAsAction="never" />
